@@ -13,7 +13,7 @@ func NewPostgres() (*sql.DB, error) {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	database, err := sql.Open("postgres", os.Getenv("PSQL"))
+	database, err := sql.Open("postgres", os.Getenv("POSTGRESQL_URL"))
 	if err != nil {
 		return nil, err
 	}

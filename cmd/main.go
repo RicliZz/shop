@@ -12,7 +12,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	initDB(database)
+	err = initDB(database)
+	if err != nil {
+		log.Fatal(err)
+	}
 	server := api.NewAPIServer(":8080", database)
 	err = server.Start()
 	if err != nil {
@@ -21,9 +24,11 @@ func main() {
 
 }
 
-func initDB(db *sql.DB) {
+func initDB(db *sql.DB) error {
 	if err := db.Ping(); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	log.Println("Successfully connected to database")
+	return nil
 
 }

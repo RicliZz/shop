@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"github.com/RiCliZz/shop/services/users"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -20,10 +21,10 @@ func (s *APIServer) Start() error {
 	router := mux.NewRouter()
 	subrouter := router.PathPrefix("/api/v1").Subrouter()
 
+	userStore := users.NewStore(s.db)
+	userHandler := users.NewHandler(userStore)
+	userHandler.RegisterRoutes(subrouter)
+
 	log.Println("Listening on " + s.addr)
-	err := http.ListenAndServe(s.addr, subrouter)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return nil
+	return http.ListenAndServe(s.addr, subrouter)
 }
