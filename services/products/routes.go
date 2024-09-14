@@ -21,6 +21,7 @@ func (h *Handler) RegisterRoutesProduct(router *mux.Router) {
 	router.HandleFunc("/product/{id}", h.GetProductById).Methods("GET")
 }
 
+// Продукт по ID
 func (h *Handler) GetProductById(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
@@ -41,6 +42,7 @@ func (h *Handler) GetProductById(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, product)
 }
 
+// Вся продукция
 func (h *Handler) GetAllProducts(w http.ResponseWriter, r *http.Request) {
 	products, err := h.store.GetProducts()
 	if err != nil {
