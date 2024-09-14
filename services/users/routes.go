@@ -20,7 +20,7 @@ func NewHandler(store *Store) *Handler {
 	}
 }
 
-func (h *Handler) RegisterRoutes(router *mux.Router) {
+func (h *Handler) RegisterRoutesUser(router *mux.Router) {
 	router.HandleFunc("/register", h.registerHandler).Methods("POST")
 	router.HandleFunc("/login", h.loginHandler).Methods("POST")
 }
@@ -48,7 +48,7 @@ func (h *Handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorJSON(w, http.StatusBadRequest, fmt.Errorf("invalid password"))
 		return
 	}
-	utils.WriteJSON(w, http.StatusOK, nil)
+	utils.WriteJSON(w, http.StatusOK, "Welcome!")
 }
 
 func (h *Handler) registerHandler(w http.ResponseWriter, r *http.Request) {

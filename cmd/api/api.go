@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"github.com/RiCliZz/shop/services/products"
 	"github.com/RiCliZz/shop/services/users"
 	"github.com/gorilla/mux"
 	"log"
@@ -23,7 +24,11 @@ func (s *APIServer) Start() error {
 
 	userStore := users.NewStore(s.db)
 	userHandler := users.NewHandler(userStore)
-	userHandler.RegisterRoutes(subrouter)
+	userHandler.RegisterRoutesUser(subrouter)
+
+	productStore := products.NewStore(s.db)
+	productHandler := products.NewHandler(productStore)
+	productHandler.RegisterRoutesProduct(subrouter)
 
 	log.Println("Listening on " + s.addr)
 	return http.ListenAndServe(s.addr, subrouter)
