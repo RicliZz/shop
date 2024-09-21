@@ -27,7 +27,7 @@ func (s *APIServer) Start() error {
 	userHandler.RegisterRoutesUser(subrouter)
 
 	productStore := products.NewStore(s.db)
-	productHandler := products.NewHandler(productStore)
+	productHandler := products.NewHandler(productStore, userStore)
 	productHandler.RegisterRoutesProduct(subrouter)
 
 	log.Println("Listening on " + s.addr)

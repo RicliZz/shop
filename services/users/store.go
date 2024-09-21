@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/RiCliZz/shop/types"
+	"github.com/RiCliZz/shop/utils"
 )
 
 type Store struct {
@@ -15,11 +16,21 @@ func NewStore(db *sql.DB) *Store {
 }
 
 func (s *Store) CreateAcc(user types.User) error {
-	_, err := s.db.Exec("INSERT INTO users (firstname, lastname, email, password) VALUES ($1, $2, $3, $4)", user.FirstName, user.LastName, user.Email, user.Password)
+	_, err := s.db.Exec("INSERT INTO users (firstname, lastname, email, token, password) VALUES ($1, $2, $3, $4, $5)", user.FirstName, user.LastName, user.Email, user.Token, user.Password)
 	if err != nil {
 		return err
 	}
-	return nil
+	return utils.EmailSend(user.Email, user.Token)
+}
+
+func (s *Store) CheckToken(token string) error {
+	u := new(types.User)
+	err := s.db.QueryRow("SELECT id FROM users WHERE token=$1", token).Scan(&u.Id)
+	if err != nil {
+		return fmt.Errorf("invalid token")
+	}
+	_, err = s.db.Exec("UPDATE users SET email_verified=TRUE WHERE id=$1", u.Id)
+	return err
 }
 
 func (s *Store) GetUserByEmail(email string) (*types.User, error) {
@@ -40,17 +51,22 @@ func (s *Store) GetUserByEmail(email string) (*types.User, error) {
 	return u, nil
 }
 
-func (s *Store) GetUserById(id int) (*types.User, error) {
-	rows, err := s.db.Query("SELECT * FROM users WHERE id = $1", id)
+func (s *Store) GetUserByIDForProfile(id int) (*types.UserProfile, error) {
+	u := new(types.UserProfile)
+	err := s.db.QueryRow("SELECT firstname, lastname, email, password FROM users WHERE id = $1", id).Scan(
+		&u.FirstName, &u.LastName, &u.Email, &u.Password)
 	if err != nil {
 		return nil, err
 	}
+	return u, nil
+}
+
+func (s *Store) GetUserByID(id int) (*types.User, error) {
 	u := new(types.User)
-	for rows.Next() {
-		u, err = scanRows(rows)
-		if err != nil {
-			return nil, err
-		}
+	err := s.db.QueryRow("SELECT * FROM users WHERE id = $1", id).Scan(&u.Id, &u.FirstName, &u.LastName,
+		&u.Email, &u.Email_verified, &u.Token, &u.Password, &u.CreatedAt, &u.Role)
+	if err != nil {
+		return nil, err
 	}
 	if u.Id == 0 {
 		return nil, fmt.Errorf("user not found")
@@ -65,8 +81,12 @@ func scanRows(rows *sql.Rows) (*types.User, error) {
 		&user.FirstName,
 		&user.LastName,
 		&user.Email,
+		&user.Email_verified,
+		&user.Token,
 		&user.Password,
-		&user.CreatedAt)
+		&user.CreatedAt,
+		&user.Role,
+	)
 	if err != nil {
 		return nil, err
 	}

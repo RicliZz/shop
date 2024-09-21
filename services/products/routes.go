@@ -2,6 +2,8 @@ package products
 
 import (
 	"fmt"
+	"github.com/RiCliZz/shop/services/auth"
+	"github.com/RiCliZz/shop/types"
 	"github.com/RiCliZz/shop/utils"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -9,16 +11,20 @@ import (
 )
 
 type Handler struct {
-	store *Store
+	store     types.ProductStore
+	userStore types.UserStore
 }
 
-func NewHandler(store *Store) *Handler {
-	return &Handler{store: store}
+func NewHandler(store types.ProductStore, userStore types.UserStore) *Handler {
+	return &Handler{store: store, userStore: userStore}
 }
 
 func (h *Handler) RegisterRoutesProduct(router *mux.Router) {
 	router.HandleFunc("/products", h.GetAllProducts).Methods("GET")
 	router.HandleFunc("/product/{id}", h.GetProductById).Methods("GET")
+
+	//ONLY FOR ADMIN
+	router.HandleFunc("/product/create", auth.WithJWTAuth(h.CreateProduct, h.userStore)).Methods("POST")
 }
 
 // Продукт по ID
@@ -49,4 +55,20 @@ func (h *Handler) GetAllProducts(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorJSON(w, http.StatusBadRequest, err)
 	}
 	utils.WriteJSON(w, http.StatusOK, products)
+}
+
+func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
+	var product types.CreateProductPayload
+	if err := utils.ParseJSON(r, product); err != nil {
+		utils.ErrorJSON(w, http.StatusBadRequest, err)
+		return
+	}
+	if err := utils.Validator.Struct(product); err != nil {
+		utils.ErrorJSON(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
+		return
+	}
+	if err := h.store.CreateProduct(&product); err != nil {
+		utils.ErrorJSON(w, http.StatusInternalServerError, fmt.Errorf("error creating product: %w", err))
+	}
+	utils.WriteJSON(w, http.StatusCreated, product)
 }
