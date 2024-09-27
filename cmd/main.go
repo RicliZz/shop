@@ -7,6 +7,17 @@ import (
 	"log"
 )
 
+// @title InternetShop
+// @version 1.0
+// @description API Server for Internet Shop
+
+// @host localhost:8080
+// @BasePath /api/v1/
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+
 func main() {
 	database, err := db.NewPostgres()
 	if err != nil {

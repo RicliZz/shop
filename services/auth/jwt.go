@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"github.com/RiCliZz/shop/responses"
 	"github.com/RiCliZz/shop/types"
 	"github.com/RiCliZz/shop/utils"
 	"github.com/golang-jwt/jwt/v5"
@@ -15,17 +16,23 @@ import (
 )
 
 func WithJWTAuth(handlerFunc http.HandlerFunc, store types.UserStore) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	f := func(w http.ResponseWriter, r *http.Request) {
 		tokenString, err := utils.GetTokenFromRequest(r)
 		if err != nil {
 			log.Println("error getting token from request:", err)
-			utils.ErrorJSON(w, http.StatusForbidden, fmt.Errorf("permission denied"))
+			utils.ErrorJSON(w, http.StatusForbidden, responses.ErrorResponse{
+				Details: err.Error(),
+				Error:   "permission denied",
+			})
 			return
 		}
 		token, err := validateJWT(tokenString)
 		if err != nil {
 			log.Println("error validating token:", err)
-			utils.ErrorJSON(w, http.StatusForbidden, fmt.Errorf("permission denied"))
+			utils.ErrorJSON(w, http.StatusForbidden, responses.ErrorResponse{
+				Details: err.Error(),
+				Error:   "permission denied",
+			})
 			return
 		}
 		claims := token.Claims.(jwt.MapClaims)
@@ -33,13 +40,19 @@ func WithJWTAuth(handlerFunc http.HandlerFunc, store types.UserStore) http.Handl
 		userID, err := strconv.Atoi(id)
 		if err != nil {
 			log.Printf("failed to convert userID to int: %v", err)
-			utils.ErrorJSON(w, http.StatusForbidden, fmt.Errorf("permission denied"))
+			utils.ErrorJSON(w, http.StatusForbidden, responses.ErrorResponse{
+				Details: err.Error(),
+				Error:   "permission denied",
+			})
 			return
 		}
 		u, err := store.GetUserByID(userID)
 		if err != nil {
 			log.Printf("failed to get user: %v", err)
-			utils.ErrorJSON(w, http.StatusForbidden, fmt.Errorf("permission denied"))
+			utils.ErrorJSON(w, http.StatusForbidden, responses.ErrorResponse{
+				Details: err.Error(),
+				Error:   "permission denied",
+			})
 			return
 		}
 		ctx := r.Context()
@@ -47,6 +60,7 @@ func WithJWTAuth(handlerFunc http.HandlerFunc, store types.UserStore) http.Handl
 		r = r.WithContext(ctx)
 		handlerFunc(w, r)
 	}
+	return f
 }
 
 func WithJWTAdminAuth(handlerFunc http.HandlerFunc, store types.UserStore) http.HandlerFunc {
@@ -54,32 +68,47 @@ func WithJWTAdminAuth(handlerFunc http.HandlerFunc, store types.UserStore) http.
 		tokenString, err := utils.GetTokenFromRequest(r)
 		if err != nil {
 			log.Println("error getting token from request:", err)
-			utils.ErrorJSON(w, http.StatusForbidden, fmt.Errorf("permission denied"))
+			utils.ErrorJSON(w, http.StatusForbidden, responses.ErrorResponse{
+				Details: err.Error(),
+				Error:   "Not auth!",
+			})
 			return
 		}
 		token, err := validateJWT(tokenString)
 		if err != nil {
 			log.Println("error validating token:", err)
-			utils.ErrorJSON(w, http.StatusForbidden, fmt.Errorf("permission denied"))
+			utils.ErrorJSON(w, http.StatusForbidden, responses.ErrorResponse{
+				Details: err.Error(),
+				Error:   "permission denied",
+			})
 			return
 		}
 		claims := token.Claims.(jwt.MapClaims)
 		id := claims["userID"].(string)
 		role := claims["roleType"].(string)
 		if role != "admin" {
-			utils.ErrorJSON(w, http.StatusForbidden, fmt.Errorf("tebe nelzya chel)"))
+			utils.ErrorJSON(w, http.StatusForbidden, responses.ErrorResponse{
+				Error:   "Only for admin. Sorry :)",
+				Details: "Permission denied",
+			})
 			return
 		}
 		userID, err := strconv.Atoi(id)
 		if err != nil {
 			log.Printf("failed to convert userID to int: %v", err)
-			utils.ErrorJSON(w, http.StatusForbidden, fmt.Errorf("permission denied"))
+			utils.ErrorJSON(w, http.StatusForbidden, responses.ErrorResponse{
+				Details: err.Error(),
+				Error:   "permission denied",
+			})
 			return
 		}
 		u, err := store.GetUserByID(userID)
 		if err != nil {
 			log.Printf("failed to get user: %v", err)
-			utils.ErrorJSON(w, http.StatusForbidden, fmt.Errorf("permission denied"))
+			utils.ErrorJSON(w, http.StatusForbidden, responses.ErrorResponse{
+				Details: err.Error(),
+				Error:   "failed to get user",
+			})
 			return
 		}
 		ctx := r.Context()

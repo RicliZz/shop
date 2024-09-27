@@ -7,4 +7,4 @@ create_db:
 migrate-up:
 	@export $$(grep -v '^#' .env | xargs) && migrate -database $${POSTGRESQL_URL} -path cmd/migrations up
 migrate-down:
-	@export $$(grep -v '^#' .env | xargs) && migrate -database $${POSTGRESQL_URL} -path cmd/migrations down
+	@export $$(grep -v '^#' .env | xargs) && migrate -database $${POSTGRESQL_URL} -path cmd/migrations down 1

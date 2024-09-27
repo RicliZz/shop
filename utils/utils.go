@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/RiCliZz/shop/responses"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"gopkg.in/gomail.v2"
@@ -25,8 +26,8 @@ func WriteJSON(w http.ResponseWriter, status int, v any) error {
 	return json.NewEncoder(w).Encode(v)
 }
 
-func ErrorJSON(w http.ResponseWriter, status int, err error) {
-	WriteJSON(w, status, map[string]string{"error": err.Error()})
+func ErrorJSON(w http.ResponseWriter, status int, resp responses.ErrorResponse) {
+	WriteJSON(w, status, resp)
 }
 
 func GetTokenFromRequest(r *http.Request) (string, error) {

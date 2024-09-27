@@ -15,12 +15,26 @@ func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
 }
 
-func (s *Store) CreateAcc(user types.User) error {
-	_, err := s.db.Exec("INSERT INTO users (firstname, lastname, email, token, password) VALUES ($1, $2, $3, $4, $5)", user.FirstName, user.LastName, user.Email, user.Token, user.Password)
+func (s *Store) CreateAcc(user types.User) (*types.UserRegisterPayload, error) {
+	createdUser := new(types.UserRegisterPayload)
+	err := s.db.QueryRow(`
+		INSERT INTO users (firstname, lastname, email, token, password) 
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING firstname, lastname, email, password`,
+		user.FirstName, user.LastName, user.Email, user.Token, user.Password).Scan(
+		&createdUser.FirstName,
+		&createdUser.LastName,
+		&createdUser.Email,
+		&createdUser.Password)
+
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return utils.EmailSend(user.Email, user.Token)
+	err = utils.EmailSend(user.Email, user.Token)
+	if err != nil {
+		return nil, err
+	}
+	return createdUser, nil
 }
 
 func (s *Store) CheckToken(token string) error {
@@ -72,6 +86,14 @@ func (s *Store) GetUserByID(id int) (*types.User, error) {
 		return nil, fmt.Errorf("user not found")
 	}
 	return u, nil
+}
+
+func (s *Store) UpdateUserProfile(id int, u *types.UserProfile) error {
+	_, err := s.db.Exec(`UPDATE users SET firstname=$1, lastname=$2, password=$3 WHERE id=$4`, u.FirstName, u.LastName, u.Password, id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func scanRows(rows *sql.Rows) (*types.User, error) {

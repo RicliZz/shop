@@ -1,0 +1,312 @@
+basePath: /api/v1/
+definitions:
+  responses.JWTResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  responses.SuccessResponse:
+    properties:
+      data: {}
+      success:
+        type: boolean
+    type: object
+  responses.UserRegisterResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      last_name:
+        type: string
+    type: object
+  types.AddressPayload:
+    properties:
+      apartment:
+        type: integer
+      city:
+        type: string
+      house:
+        type: integer
+      street:
+        type: string
+    type: object
+  types.CreateProductPayload:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+    required:
+    - name
+    - price
+    type: object
+  types.ShortProducts:
+    properties:
+      name:
+        type: string
+      price:
+        type: number
+    type: object
+  types.User:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      firstName:
+        type: string
+      id:
+        type: integer
+      lastName:
+        type: string
+      password:
+        type: string
+      role:
+        type: string
+      token:
+        type: string
+    type: object
+  types.UserLoginPayload:
+    properties:
+      email:
+        type: string
+      password:
+        maxLength: 32
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  types.UserProfile:
+    properties:
+      address:
+        $ref: '#/definitions/types.AddressPayload'
+      email:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+      password:
+        type: string
+    type: object
+  types.UserRegisterPayload:
+    properties:
+      email:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+      password:
+        maxLength: 32
+        minLength: 8
+        type: string
+    required:
+    - email
+    - firstName
+    - lastName
+    - password
+    type: object
+  types.UserUpdatePayload:
+    properties:
+      firstName:
+        type: string
+      lastName:
+        type: string
+      password:
+        maxLength: 32
+        minLength: 8
+        type: string
+    required:
+    - password
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API Server for Internet Shop
+  title: InternetShop
+  version: "1.0"
+paths:
+  /ADDress:
+    post:
+      consumes:
+      - application/json
+      description: Create address
+      parameters:
+      - description: Address data
+        in: body
+        name: address
+        required: true
+        schema:
+          $ref: '#/definitions/types.AddressPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'User with this ID: '
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Address
+      tags:
+      - Address
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Log in user
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/types.UserLoginPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success login
+          schema:
+            $ref: '#/definitions/responses.JWTResponse'
+      summary: log in
+      tags:
+      - Users
+  /product/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get one product with ID
+          schema:
+            $ref: '#/definitions/types.CreateProductPayload'
+      summary: one product
+      tags:
+      - products
+  /products:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get all products
+          schema:
+            items:
+              $ref: '#/definitions/types.ShortProducts'
+            type: array
+      summary: all products
+      tags:
+      - products
+  /profile:
+    get:
+      consumes:
+      - application/json
+      description: Profile for User
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get your profile
+          schema:
+            $ref: '#/definitions/types.UserProfile'
+      security:
+      - ApiKeyAuth: []
+      summary: Get MY Profile
+      tags:
+      - Users
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/types.UserUpdatePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success update
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update Profile
+      tags:
+      - Users
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Create someone user
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/types.UserRegisterPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success registration, but need confirm Email
+          schema:
+            $ref: '#/definitions/responses.UserRegisterResponse'
+      summary: sign in
+      tags:
+      - Users
+  /user/{id}:
+    get:
+      consumes:
+      - application/json
+      description: GET User ONLY FOR ADMIN
+      parameters:
+      - description: User data
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'User with this ID: '
+          schema:
+            $ref: '#/definitions/types.User'
+      security:
+      - ApiKeyAuth: []
+      summary: Get
+      tags:
+      - Admin
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
