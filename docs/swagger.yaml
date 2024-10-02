@@ -24,6 +24,20 @@ definitions:
       last_name:
         type: string
     type: object
+  types.AddProduct:
+    properties:
+      name:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  types.AddToCart:
+    properties:
+      id:
+        type: integer
+      quantity:
+        type: integer
+    type: object
   types.AddressPayload:
     properties:
       apartment:
@@ -34,6 +48,15 @@ definitions:
         type: integer
       street:
         type: string
+    type: object
+  types.CartItem:
+    properties:
+      name:
+        type: string
+      price:
+        type: number
+      quantity:
+        type: integer
     type: object
   types.CreateProductPayload:
     properties:
@@ -49,6 +72,8 @@ definitions:
     type: object
   types.ShortProducts:
     properties:
+      id:
+        type: integer
       name:
         type: string
       price:
@@ -56,6 +81,8 @@ definitions:
     type: object
   types.User:
     properties:
+      banned:
+        type: boolean
       createdAt:
         type: string
       email:
@@ -162,6 +189,61 @@ paths:
       summary: Create Address
       tags:
       - Address
+  /cart:
+    delete:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Del all products in you're cart
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: full clear you're cart
+      tags:
+      - Cart
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: All products in cart
+          schema:
+            items:
+              $ref: '#/definitions/types.CartItem'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: get cart
+      tags:
+      - Cart
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product Id, quantity
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/types.AddToCart'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success add
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: add product in cart
+      tags:
+      - Cart
   /login:
     post:
       consumes:
@@ -184,6 +266,22 @@ paths:
       summary: log in
       tags:
       - Users
+  /order:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success order
+          schema:
+            type: int
+      security:
+      - ApiKeyAuth: []
+      summary: Create order
+      tags:
+      - Order
   /product/{id}:
     get:
       consumes:
@@ -204,6 +302,54 @@ paths:
       summary: one product
       tags:
       - products
+  /product/add:
+    post:
+      consumes:
+      - application/json
+      description: ONLY FOR ADMIN
+      parameters:
+      - description: Product data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/types.AddProduct'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product
+          schema:
+            $ref: '#/definitions/types.AddProduct'
+      security:
+      - ApiKeyAuth: []
+      summary: addQuantityProduct
+      tags:
+      - Admin
+  /product/create:
+    post:
+      consumes:
+      - application/json
+      description: ONLY FOR ADMIN
+      parameters:
+      - description: Product data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/types.CreateProductPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product
+          schema:
+            $ref: '#/definitions/types.CreateProductPayload'
+      security:
+      - ApiKeyAuth: []
+      summary: create new product
+      tags:
+      - Admin
   /products:
     get:
       consumes:
@@ -221,6 +367,22 @@ paths:
       tags:
       - products
   /profile:
+    delete:
+      consumes:
+      - application/json
+      description: Full del acc with order, cart, address
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Delete account:'
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete acc
+      tags:
+      - Users
     get:
       consumes:
       - application/json
@@ -302,6 +464,29 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get
+      tags:
+      - Admin
+  /user/ban/{id}:
+    post:
+      consumes:
+      - application/json
+      description: Ban user
+      parameters:
+      - description: User id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'User with this ID: '
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Post
       tags:
       - Admin
 securityDefinitions:

@@ -13,6 +13,24 @@ func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
 }
 
+func (s *Store) UpdateProduct(product *types.Product) error {
+	_, err := s.db.Exec(`UPDATE products SET quantity=$1 WHERE id=$2`, product.Quantity, product.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Store) GetProductByName(name string) (*types.Product, error) {
+	var product types.Product
+	err := s.db.QueryRow(`SELECT * FROM products WHERE name=$1`, name).Scan(
+		&product.ID, &product.Name, &product.Description, &product.Price, &product.Quantity)
+	if err != nil {
+		return nil, err
+	}
+	return &product, nil
+}
+
 func (s *Store) GetProductByID(id int) (*types.CreateProductPayload, error) {
 	var p types.CreateProductPayload
 	err := s.db.QueryRow("SELECT name, description, price FROM products WHERE id = $1", id).Scan(
@@ -26,7 +44,7 @@ func (s *Store) GetProductByID(id int) (*types.CreateProductPayload, error) {
 }
 
 func (s *Store) GetProducts() ([]*types.ShortProducts, error) {
-	rows, err := s.db.Query("SELECT name, price FROM products")
+	rows, err := s.db.Query("SELECT id, name, price FROM products")
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +70,7 @@ func (s *Store) CreateProduct(p *types.CreateProductPayload) error {
 func scanProducts(rows *sql.Rows) (*types.ShortProducts, error) {
 	products := new(types.ShortProducts)
 	err := rows.Scan(
+		&products.Id,
 		&products.Name,
 		&products.Price)
 	if err != nil {

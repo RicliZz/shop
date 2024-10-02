@@ -33,6 +33,7 @@ type User struct {
 	Password       string    `json:"password"`
 	CreatedAt      time.Time `json:"createdAt"`
 	Role           string    `json:"role"`
+	Banned         bool      `json:"banned"`
 }
 
 type Product struct {
@@ -40,9 +41,24 @@ type Product struct {
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
+	Quantity    int     `json:"quantity"`
+}
+
+type Cart struct {
+	ID        int       `json:"id"`
+	UserID    int       `json:"userId"`
+	ProductID int       `json:"productId"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+type CartItem struct {
+	Name     string  `json:"name"`
+	Price    float64 `json:"price"`
+	Quantity int     `json:"quantity"`
 }
 
 type ShortProducts struct {
+	Id    int     `json:"id"`
 	Name  string  `json:"name"`
 	Price float64 `json:"price"`
 }
@@ -56,20 +72,34 @@ type UserStore interface {
 	GetUserByEmail(email string) (*User, error)
 	GetUserByID(id int) (*User, error)
 	CreateAcc(User) (*UserRegisterPayload, error)
+	DeleteAccount(id int) error
 	CheckToken(token string) error
 	GetUserByIDForProfile(id int) (*UserProfile, error)
 	UpdateUserProfile(id int, user *UserProfile) error
+	BanUser(id int) error
 }
 
 type ProductStore interface {
 	GetProductByID(id int) (*CreateProductPayload, error)
 	GetProducts() ([]*ShortProducts, error)
 	CreateProduct(p *CreateProductPayload) error
+	GetProductByName(name string) (*Product, error)
+	UpdateProduct(product *Product) error
 }
 
 type AddressStore interface {
 	CreateNewAddress(id int, store Address) error
 	GetAddresses(id int) (*AddressPayload, error)
+}
+
+type CartStore interface {
+	AddToCart(id_user int, id_product int, quantity int) error
+	CheckCart(id int) ([]CartItem, error)
+	DeleteCart(id int) error
+}
+
+type OrderStore interface {
+	CreateNewOrder(id int, total float64) (int, error)
 }
 
 type Address struct {
@@ -94,4 +124,22 @@ type UserProfile struct {
 	Email     string
 	Password  string
 	Address   *AddressPayload
+}
+
+type Order struct {
+	Id        int       `json:"id"`
+	User_id   int       `json:"user_id"`
+	Total     float64   `json:"total"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+type AddProduct struct {
+	Name     string `json:"name"`
+	Quantity int    `json:"quantity"`
+}
+
+type AddToCart struct {
+	Id       int `json:"id"`
+	Quantity int `json:"quantity"`
 }

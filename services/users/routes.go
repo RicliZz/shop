@@ -29,9 +29,11 @@ func (h *Handler) RegisterRoutesUser(router *mux.Router) {
 	router.HandleFunc("/confirm", h.confirmEmailHandler).Methods("GET")
 	router.HandleFunc("/profile", auth.WithJWTAuth(h.profileHandler, h.store)).Methods("GET")
 	router.HandleFunc("/profile", auth.WithJWTAuth(h.updateProfileHandler, h.store)).Methods("PATCH")
+	router.HandleFunc("/profile", auth.WithJWTAuth(h.deleteProfileHandler, h.store)).Methods("DELETE")
 
 	//only for admin
 	router.HandleFunc("/user/{id}", auth.WithJWTAdminAuth(h.handleGetUser, h.store)).Methods("GET")
+	router.HandleFunc("/user/ban/{id}", auth.WithJWTAdminAuth(h.banUserHandler, h.store)).Methods("POST")
 }
 
 // @Summary Update Profile
@@ -201,6 +203,14 @@ func (h *Handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	if u.Banned {
+		utils.ErrorJSON(w, http.StatusInternalServerError, responses.ErrorResponse{
+			Details: "You're banned, try later",
+		})
+		return
+	}
+
 	if !u.Email_verified {
 		utils.ErrorJSON(w, http.StatusInternalServerError, responses.ErrorResponse{
 			Details: "email not verified",
@@ -321,4 +331,68 @@ func (h *Handler) handleGetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, user)
+}
+
+// @Summary Post
+// @Description Ban user
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "User id"
+// @Success 200 {object} responses.SuccessResponse "User with this ID: "
+// @Router /user/ban/{id} [POST]
+func (h *Handler) banUserHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	str, ok := vars["id"]
+	if !ok {
+		utils.ErrorJSON(w, http.StatusBadRequest, responses.ErrorResponse{
+			Details: "id not found",
+		})
+	}
+	id, err := strconv.Atoi(str)
+	if err != nil {
+		utils.ErrorJSON(w, http.StatusBadRequest, responses.ErrorResponse{
+			Error:   err.Error(),
+			Details: "invalid id (mb not number)",
+		})
+	}
+	err = h.store.BanUser(id)
+	if err != nil {
+		utils.ErrorJSON(w, http.StatusInternalServerError, responses.ErrorResponse{
+			Error:   err.Error(),
+			Details: "NOT banned user",
+		})
+	}
+	utils.WriteJSON(w, http.StatusOK, responses.SuccessResponse{
+		Success: true,
+		Data:    "Successfully banned user",
+	})
+
+}
+
+// @Summary Delete acc
+// @Description Full del acc with order, cart, address
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} responses.SuccessResponse "Delete account:"
+// @Router /profile [DELETE]
+func (h *Handler) deleteProfileHandler(w http.ResponseWriter, r *http.Request) {
+	id, ok := r.Context().Value("userID").(int)
+	if !ok {
+		utils.ErrorJSON(w, http.StatusInternalServerError, responses.ErrorResponse{
+			Details: "not authenticated",
+		})
+	}
+	if err := h.store.DeleteAccount(id); err != nil {
+		utils.ErrorJSON(w, http.StatusInternalServerError, responses.ErrorResponse{
+			Details: "error deleting user",
+		})
+	}
+	utils.WriteJSON(w, http.StatusOK, responses.SuccessResponse{
+		Success: true,
+		Data:    "Successfully deleted user",
+	})
 }

@@ -37,6 +37,34 @@ func (s *Store) CreateAcc(user types.User) (*types.UserRegisterPayload, error) {
 	return createdUser, nil
 }
 
+func (s *Store) DeleteAccount(id int) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec(`DELETE FROM orders WHERE user_id = $1`, id)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`DELETE FROM cart WHERE user_id = $1`, id)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`DELETE FROM address WHERE user_id = $1`, id)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`DELETE FROM users WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *Store) CheckToken(token string) error {
 	u := new(types.User)
 	err := s.db.QueryRow("SELECT id FROM users WHERE token=$1", token).Scan(&u.Id)
@@ -78,7 +106,7 @@ func (s *Store) GetUserByIDForProfile(id int) (*types.UserProfile, error) {
 func (s *Store) GetUserByID(id int) (*types.User, error) {
 	u := new(types.User)
 	err := s.db.QueryRow("SELECT * FROM users WHERE id = $1", id).Scan(&u.Id, &u.FirstName, &u.LastName,
-		&u.Email, &u.Email_verified, &u.Token, &u.Password, &u.CreatedAt, &u.Role)
+		&u.Email, &u.Email_verified, &u.Token, &u.Password, &u.CreatedAt, &u.Role, &u.Banned)
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +118,15 @@ func (s *Store) GetUserByID(id int) (*types.User, error) {
 
 func (s *Store) UpdateUserProfile(id int, u *types.UserProfile) error {
 	_, err := s.db.Exec(`UPDATE users SET firstname=$1, lastname=$2, password=$3 WHERE id=$4`, u.FirstName, u.LastName, u.Password, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Store) BanUser(id int) error {
+	query := `UPDATE users SET banned=TRUE WHERE id=$1`
+	_, err := s.db.Exec(query, id)
 	if err != nil {
 		return err
 	}
@@ -108,6 +145,7 @@ func scanRows(rows *sql.Rows) (*types.User, error) {
 		&user.Password,
 		&user.CreatedAt,
 		&user.Role,
+		&user.Banned,
 	)
 	if err != nil {
 		return nil, err

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"github.com/RiCliZz/shop/cmd/api"
 	"github.com/RiCliZz/shop/db"
+	"github.com/redis/go-redis/v9"
 	"log"
 )
 
@@ -20,6 +22,11 @@ import (
 
 func main() {
 	database, err := db.NewPostgres()
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,12 +34,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	server := api.NewAPIServer(":8080", database)
+	_, err = rdb.Ping(context.Background()).Result()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Successfully connected to redis server")
+	server := api.NewAPIServer(":8080", database, rdb)
 	err = server.Start()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func initDB(db *sql.DB) error {
