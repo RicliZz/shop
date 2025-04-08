@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option go_package = "./gen/proto";
+
+package storage_proto;
+
+
+service Storage{
+  rpc GetProductsInOrder (ProductsInOrderRequest) returns (ProductsInOrderResponse) {}
+}
+
+message ProductsInOrderRequest{
+  int32 user_id = 1;
+}
+
+message ProductsInOrderResponse{
+  repeated Product product = 1;
+  string status = 2;
+}
+
+message Product{
+  int32 product_id = 1;
+  string product_name = 2;
+  float price = 3;
+  int32 quantity = 4;
+}
